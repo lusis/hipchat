@@ -30,7 +30,7 @@ type Client struct {
 	receivedRooms   chan []*Room
 	receivedMessage chan *Message
 	unhandledEvent  chan *xml.StartElement
-	errorEvent      chan *error
+	errorEvent      chan error
 	host            string
 	conf            string
 }
