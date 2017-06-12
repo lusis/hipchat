@@ -30,6 +30,7 @@ type Client struct {
 	receivedRooms   chan []*Room
 	receivedMessage chan *Message
 	unhandledEvent  chan *xml.StartElement
+	errorEvent      chan *error
 	host            string
 	conf            string
 }
@@ -72,10 +73,12 @@ func NewClient(user, pass, resource string) (*Client, error) {
 // NewClientWithServerInfo creates a new Client connection from the user name, password,
 // resource, host URL and conf URL passed to it.
 func NewClientWithServerInfo(user, pass, resource, host, conf string) (*Client, error) {
+	errchannel := make(chan error)
 	connection, err := xmpp.Dial(host)
 	if err != nil {
 		return nil, err
 	}
+	connection.SetErrorChannel(errchannel)
 	var b bytes.Buffer
 	if err := xml.EscapeText(&b, []byte(pass)); err != nil {
 		return nil, err
@@ -95,6 +98,7 @@ func NewClientWithServerInfo(user, pass, resource, host, conf string) (*Client, 
 		receivedRooms:   make(chan []*Room),
 		receivedMessage: make(chan *Message),
 		unhandledEvent:  make(chan *xml.StartElement),
+		errorEvent:      errchannel,
 		host:            host,
 		conf:            conf,
 	}
@@ -116,6 +120,11 @@ func NewClientWithServerInfo(user, pass, resource, host, conf string) (*Client, 
 // dealing with events that this library doesn't handle
 func (c *Client) UnhandledEvents() <-chan *xml.StartElement {
 	return c.unhandledEvent
+}
+
+// ErrorEvents returns errors from operations on the xmpp conn
+func (c *Client) ErrorEvents() <-chan error {
+	return c.errorEvent
 }
 
 // Messages returns a read-only channel of Message structs. After joining a
