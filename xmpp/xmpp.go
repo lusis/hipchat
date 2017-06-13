@@ -141,6 +141,10 @@ func (c *Conn) Next() (xml.StartElement, error) {
 				return element, errors.New("invalid xml response")
 			}
 			return element, nil
+		default:
+			m := fmt.Errorf("Got an unexpected token: %+v", t)
+			c.errchan <- m
+			return element, m
 		}
 	}
 }
